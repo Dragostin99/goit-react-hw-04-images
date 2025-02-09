@@ -1,8 +1,9 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useState ,useRef } from 'react';
 import Searchbar from './Searchbar.js/Searchbar';
 import fetchImages from './fetchImages/fetchImages';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Modal from './Modal/Modal';
+import Loader from './Loader/Loader';
 import LoadMore from './LoadMore/LoadMore';
 import ErrorDisplay from './errorDisplay/ErrorDisplay';
 
@@ -16,21 +17,32 @@ export const App = () => {
   const [maxPages, setMaxPages] = useState(null);
   const [largeImageUrl, setLargeImageUrl] = useState(null);
   const [modalIsVisible, setModalIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+
+const imagesRef = useRef(images);
+
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         const { totalHits, hits } = await fetchImages(filter, pageNum);
         const imgMaxPages = Math.ceil(totalHits / perPage);
         setMaxPages(imgMaxPages);
-        const newImages = [...images, ...hits];
+        const newImages = [...imagesRef.current, ...hits];
         setImages(newImages);
         setIsError(false);
       } catch (err) {
         console.log(err);
         setIsError(true);
-      } 
+      } finally {
+        setIsLoading(false);
+      }
     };
     if (filter) {
       fetchData();
@@ -58,6 +70,7 @@ export const App = () => {
           setModalIsVisible={setModalIsVisible}
         />
       )}
+      {isLoading && <Loader />}
       {maxPages > 1 && (
         <LoadMore
           setPageNum={setPageNum}
